@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .user-list {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .user-item {
+      margin: 10px;
+      text-align: center;
+    }
+    .user-item img {
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome, <%= user.username %></h1>
+  <h2>Your Group ID: <%= groupId %></h2>
+  <div class="user-list">
+    <% groupUsers.forEach(function(user) { %>
+      <div class="user-item">
+        <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="<%= user.username %>">
+        <p><%= user.username %></p>
+      </div>
+    <% }) %>
+  </div>
+  <div id="messages"></div>
+  <input id="messageInput" type="text" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const socket = io({
+      query: {
+        groupId: '<%= groupId %>'
+      }
+    });
+
+    // ルームに参加
+    socket.emit('joinRoom', '<%= groupId %>');
+
+    // メッセージ受信
+    socket.on('message', (msg) => {
+      const messageDiv = document.getElementById('messages');
+      const newMessage = document.createElement('div');
+      newMessage.textContent = msg;
+      messageDiv.appendChild(newMessage);
+    });
+
+    // メッセージ送信
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value;
+      socket.emit('message', message);
+      input.value = '';
+    }
+  </script>
+</body>
+</html>
