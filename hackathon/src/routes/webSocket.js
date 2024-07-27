@@ -1,34 +1,58 @@
 // WebSocket通信 ハンドラー
-
+//require('dotenv').config(); // 環境変数
 
 // モジュールインポート
 const express = require('express')
-const expressws = require('express-ws')
-// const websocket = require('./websocket')
+const expressws = require('express-ws')(app)
+const { getUserData, getAllUser, getState } = require('./server');
 
-// ルーティング定義
-const router = express.Router()
-expressws(router)
+// クライアント(参加者)
+const clients = new Set();
 
-// WebSocket接続
-router.ws('/test', (ws, req) => {
-    ws.send('接続成功')
-    console.log('接続成功');
-    let interval
-    interval = setInterval(() => {
-        if (ws.readyState === ws.OPEN) {
-            console.log('test')
-            ws.send(Math.random().toFixed(2))
-            ws.send('test')
-        } else {
-            clearInterval(interval)
-        }
-    }, 1000)
+// WebSocketエンドポイント定義
+// 入室 (配列格納後)  入室者の情報をみんなに通知
+app.ws('/ws/enter/:sertNum', function (ws, req) {
+    clients.add(ws);
 
-    ws.on('message', msg => {
-        ws.send(msg)
-        console.log(msg)
-    })
-})
+    ws.on(' message ', function (msg) {
+        clients.forEach(client => { // 全員に通知
+            if (client.readyState === ws.OPEN) { // クライアントの接続が続いていたら
+                ws.send(getUserName(req.params.seatNum)); // 入室者のユーザ情報
+            }
+        })
+        console.log("入室したよ")
+    });
+});
 
+
+// 退室　退室した人の席を埋めるようみんなに通知
+app.ws('/ws/leave/:sertNum', function (ws, req) {
+    clients.delete(ws);
+
+    ws.on(' message ', function (msg) {
+        clients.forEach(client => { // 全員に通知
+            if (client.readyState === ws.OPEN) { // クライアントの接続が続いていたら
+                for (let i = req.params.sertNum; i < clients.size; i++) { // 消去した配列より後ろがずれる
+                    ws.send(getAllUser()); // ユーザ情報配列
+                }
+            }
+        })
+        console.log("退室したよ")
+    });
+});
+
+// ステータス変更  変更されたステータスをみんなに通知
+app.ws('/ws/status/:sertNum', function (ws, req) {
+    ws.on(' message ', function (msg) {
+        clients.forEach(client => { // 全員に通知
+            if (client.readyState === ws.OPEN) { // クライアントの接続が続いていたら
+                ws.send(getStatus(req.params.sertNum)); // ステータス
+            }
+        })
+    });
+    console.log("ステータス変更したよ")
+});
+
+
+// ルーターのエクスポート
 module.exports = router;
