@@ -50,31 +50,31 @@ app.delete('/data/:seatNum', (req, res) => { // 席番号を受け取る
     res.status(204).send();
 });
 
-// 特定のステータスを取得
-app.get('/data/:seatNum', (req, res) => { // 席番号を受け取る
+// ステータスを取得
+app.get('/status/:seatNum', (req, res) => { // 席番号を受け取る
     const seatNum = parseInt(req.params.seatNum, 10);
     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
     const status = userData[seatNum].status
     res.json(status); // ステータスを返す
 });
 
+// ステータスを更新
+app.put('/status/:seatNum', (req, res) => { // 席番号を受け取る
+  const seatNum = parseInt(req.params.seatNum, 10);
+  if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+  const data = userData[seatNum]
+
+  data.status = req.body.newStatus || data.status;
+  userData, put(seatNum, data)
+
+  res.json(data);
+});
+
 // 特定のユーザアイコンを取得
-app.get('/data/:seatNum', (req, res) => { // 席番号を受け取る
+app.get('/icon/:seatNum', (req, res) => { // 席番号を受け取る
     const seatNum = parseInt(req.params.seatNum, 10);
     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
     const id = userData[seatNum].userID
     const avatar = userData[req.params.seatNum].userAvater
     res.json("https://cdn.discordapp.com/avatars/" + id + "/" + avatar + ".png");
 }); // 画像を返す
-
-// ステータスを更新
-app.put('/data/:seatNum', (req, res) => { // 席番号を受け取る
-    const seatNum = parseInt(req.params.seatNum, 10);
-    if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
-    const data = userData[seatNum]
-
-    data.status = req.body.newStatus || data.status;
-    userData, put(seatNum, data)
-
-    res.json(data);
-});
