@@ -9,6 +9,7 @@ const passport = require('passport');
 
 // ルーティング設定
 const websocket = require('./routes/webSocket');
+const server = require('./routes/server');
 const loginRoutes = require('./routes/login'); // ログイン
 const homeRoutes = require('./routes/home'); // ホーム
 const chatRoutes = require('./routes/chat'); // 掲示板
@@ -49,6 +50,7 @@ app.set('view engine', 'ejs'); // ejsの設定
 
 // ルーティング(接続処理)
 app.use('/websocket', websocket);
+app.use('/server', server);
 app.use('/auth', loginRoutes); // ログイン
 app.use('/home', homeRoutes); // ホーム
 app.use('/chat', chatRoutes); // 掲示板

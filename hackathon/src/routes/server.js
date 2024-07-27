@@ -24,8 +24,15 @@ let userData = [];
 
 
 // 全てのユーザ情報を取得(画面読み込み時)
-app.get('/data', (req, res) => {
+app.get('/data/all', (req, res) => {
     res.json(userData);
+});
+
+// 一人のユーザ情報を取得
+app.get('/data/:seatNum', (req, res) => {
+  const seatNum = parseInt(req.params.seatNum, 10);
+    if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+    res.json(userData[seatNum]);
 });
 
 // 入室者を配列に登録
