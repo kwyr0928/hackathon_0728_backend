@@ -1,11 +1,12 @@
-// Expressアプリケーション作成、サーバーのセットアップ
+const express = require('express'); // express
+const session = require('express-session'); // セッション管理
+const passport = require('./config/passport'); // ログイン管理
+const http = require('http'); // http通信
+const socketIo = require('socket.io'); // webSocket
 
-// モジュールインポート
-const express = require('express')
-const expressws = require('express-ws')
-const session = require('express-session');
-require('dotenv').config(); // 環境変数の取得
-const passport = require('passport');
+const app = express(); // expressアプリケーション作成
+const server = http.createServer(app); // サーバー作成
+const io = socketIo(server); // webSocket
 
 // ルーティング設定
 const websocket = require('./routes/webSocket');
@@ -16,33 +17,13 @@ const chatRoutes = require('./routes/chat'); // 掲示板
 const paintRoutes = require('./routes/paint'); // ペイント
 const rouletteRoutes = require('./routes/roulette'); // ルーレット
 
-// discord コマンド
-const helloFile = require('./discord/hello.js'); // こんにちは
-const urlFile = require('./discord/url.js'); // パーティー
-const { Client, Events, GatewayIntentBits } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-const token = process.env.TOKEN; // トークン
-
-client.once(Events.ClientReady, c => { // 準備完了通知
-	console.log(`準備OKです! ${c.user.tag}がログインします。`);
-});
-
-// Expressアプリケーションを作成
-
-const app = express() // Webサーバー作成
-expressws(app); // ExpressとWebSocketを結合
-
-// 静的ファイル提供（使い道わからない）
-//app.use(express.static('public'))
-
-// セッション設定
-app.use(session({
-    secret: process.env.SESSION_SECRET, // セッションの署名に使用される秘密鍵
-    resave: false,             // セッションが変更されない場合でも再保存するかどうか
-    saveUninitialized: false,   // 新しいセッションが作成される際に、初期化されていないセッションを保存するかどうか
+// ミドルウェア
+app.use(session({ 
+    secret: process.env.SESSION_SECRET,
+    resave: false, 
+    saveUninitialized: false,
     cookie: { secure: false }  // 開発中は false に設定、本番環境では true に設定
 }));
-
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -57,44 +38,23 @@ app.use('/chat', chatRoutes); // 掲示板
 app.use('/paint', paintRoutes); // ペイント
 app.use('/roulette', rouletteRoutes); // ルーレット
 
-// サーバー起動
-const PORT = process.env.PORT || 3000; // ポート指定
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-  })
+// WebSocketの設定
+io.on('connection', (socket) => {
+    socket.on('joinRoom', (groupId) => { // グループに参加
+        socket.join(groupId);
+        console.log(`User joined room: ${groupId}`);
+    })
+    socket.on('message', (msg) => { // メッセージ送信
+        const groupId = socket.handshake.query.groupId;
+        io.to(groupId).emit('message', msg);
+    });
 
-client.on(Events.InteractionCreate, async interaction => { // コマンドに対する応答
-  if (!interaction.isChatInputCommand()) return; // コマンドが規定外の場合は処理を中止
-
-  // こんにちは
-  if (interaction.commandName === helloFile.data.name) {
-    try {
-        await helloFile.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'コマンド実行時にエラーになりました。', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'コマンド実行時にエラーになりました。', ephemeral: true });
-        }
-    }
-} else 
-
-// パーティー
-if (interaction.commandName === urlFile.data.name) {
-    try {
-        await urlFile.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'コマンド実行時にエラーになりました。', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'コマンド実行時にエラーになりました。', ephemeral: true });
-        }
-    }
-} else {
-    console.error(`${interaction.commandName}というコマンドには対応していません。`);
-}
+    socket.on('disconnect', () => { // 通信切断
+        console.log('User disconnected');
+    });
 });
 
-client.login(token); // ログイン
+const PORT = process.env.PORT || 3000; // ポート指定
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
