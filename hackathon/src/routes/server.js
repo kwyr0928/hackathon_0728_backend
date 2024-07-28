@@ -24,12 +24,26 @@ let userData = [];
 
 
 // 全てのユーザ情報を取得(画面読み込み時)
-app.get('/data', (req, res) => {
+app.get('/data/all', (req, res) => {
     res.json(userData);
 });
+function getAllUser(){
+    return userData;
+}
+
+// 一人のユーザ情報を取得
+// app.get('/data/:seatNum', (req, res) => {
+//     const seatNum = parseInt(req.params.seatNum, 10);
+//     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+//     sendUserData(serData[seatNum]);
+//     res.json(userData[seatNum]);
+// });
+function getUserData(seatNum){
+    return userData[seatNum];
+}
 
 // 入室者を配列に登録
-app.post('/data', (req, res) => {
+app.post('/enter', (req, res, next) => {
     const newData = {
         groupID: req.body.groupID,
         userID: req.body.userID,
@@ -41,7 +55,7 @@ app.post('/data', (req, res) => {
 });
 
 // 退室者を配列から消去
-app.delete('/data/:seatNum', (req, res) => { // 席番号を受け取る
+app.delete('/leave/:seatNum', (req, res) => { // 席番号を受け取る
     const seatNum = parseInt(req.params.seatNum, 10);
     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
     const data = userData[seatNum];
@@ -50,16 +64,29 @@ app.delete('/data/:seatNum', (req, res) => { // 席番号を受け取る
     res.status(204).send();
 });
 
-// 特定のステータスを取得
-app.get('/data/:seatNum', (req, res) => { // 席番号を受け取る
+// ステータスを取得
+// app.get('/status/:seatNum', (req, res) => { // 席番号を受け取る
+//     const seatNum = parseInt(req.params.seatNum, 10);
+//     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+//     const status = userData[seatNum].status
+//     res.json(status); // ステータスを返す
+// });
+function getState(seatNum){
+    return userData[seatNum].status;
+}
+
+// ステータスを更新
+app.put('/status/:seatNum', (req, res) => { // 席番号を受け取る
     const seatNum = parseInt(req.params.seatNum, 10);
     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
-    const status = userData[seatNum].status
-    res.json(status); // ステータスを返す
+    const data = userData[seatNum]
+
+    data.status = req.body.newStatus || data.status;
+    userData, put(seatNum, data)
 });
 
 // 特定のユーザアイコンを取得
-app.get('/data/:seatNum', (req, res) => { // 席番号を受け取る
+app.get('/icon/:seatNum', (req, res) => { // 席番号を受け取る
     const seatNum = parseInt(req.params.seatNum, 10);
     if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
     const id = userData[seatNum].userID
@@ -67,14 +94,4 @@ app.get('/data/:seatNum', (req, res) => { // 席番号を受け取る
     res.json("https://cdn.discordapp.com/avatars/" + id + "/" + avatar + ".png");
 }); // 画像を返す
 
-// ステータスを更新
-app.put('/data/:seatNum', (req, res) => { // 席番号を受け取る
-    const seatNum = parseInt(req.params.seatNum, 10);
-    if (isNaN(seatNum) | seatNum < 0 || maxUser - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
-    const data = userData[seatNum]
-
-    data.status = req.body.newStatus || data.status;
-    userData, put(seatNum, data)
-
-    res.json(data);
-});
+module.exports = { getUserData, getAllUser, getState };
