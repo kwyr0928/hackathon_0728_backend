@@ -1,7 +1,8 @@
 {
   "name": "hackathon_0728_backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./hackathon/src/App.js",
+  
   "dependencies": {
     "asynckit": "^0.4.0",
     "axios": "^1.7.2",
@@ -33,7 +34,8 @@
     "ws": "^8.18.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./hackathon/src/App.js"
   },
   "author": "",
   "license": "ISC",
