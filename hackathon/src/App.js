@@ -49,7 +49,7 @@ app.use(passport.session());
 app.set('view engine', 'ejs'); // ejsの設定
 
 // ルーティング(接続処理)
-app.use('/websocket', websocket);
+app.use('/ws', websocket);
 app.use('/server', server);
 app.use('/auth', loginRoutes); // ログイン
 app.use('/home', homeRoutes); // ホーム
