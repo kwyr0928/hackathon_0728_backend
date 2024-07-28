@@ -94,4 +94,13 @@ app.get('/server/icon/:seatNum', (req, res) => { // 席番号を受け取る
     res.json("https://cdn.discordapp.com/avatars/" + id + "/" + avatar + ".png");
 }); // 画像を返す
 
+// 参加者全員のユーザ名取得
+app.get('/server/userID', (req, res) => { // 席番号を受け取る
+    const userArray = [];
+    userData.forEach(user => {
+        userArray.push(user.userID);
+    })
+    res.send(userArray);
+});
+
 module.exports = { getUserData, getAllUser, getState };
