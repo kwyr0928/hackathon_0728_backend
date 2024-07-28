@@ -1,16 +1,17 @@
-// WebSocket通信 ハンドラー
-//require('dotenv').config(); // 環境変数
-
 // モジュールインポート
-const express = require('express')
-const expressws = require('express-ws')(app)
-const { getUserData, getAllUser, getState } = require('./server');
+const express = require('express');
+const expressws = require('express-ws')
+const { getUserData, getAllUser, getStatus } = require('./server');
+const router = express.Router()
+expressws(router)
 
 // クライアント(参加者)
-const clients = new Map();// ユーザIDと接続を結び付ける 
+const clients = new Map(); // ユーザIDと接続を結び付ける 
 
 // WebSocket接続
-app.ws('/ws', function (ws, req) {
+router.ws('/ws', function (ws, req) {
+    let userId = null; // ユーザIDを保持
+
     ws.on('message', function (msg) {
         console.log(`Message from ${userId}: ${msg}`);
     });
@@ -18,93 +19,110 @@ app.ws('/ws', function (ws, req) {
     // 接続が切れたら
     ws.on('close', function () {
         console.log(`${userId} disconnected`);
-    })
-})
-
+        clients.delete(ws); // クライアント削除
+    });
+});
 
 // WebSocketエンドポイント定義
-// 入室 (配列格納後)  入室者の情報をみんなに通知
-app.post('/ws/enter/:seatNum', (req, res) => {
-    const seatNum = parseInt(req.params.seatNum, 10);
-    // seatNumが範囲外の時、not found
-    if (isNaN(seatNum) | seatNum < 0 || crients.size < seatNum) return res.status(404).json({ message: 'data not found' });
+// 入室 (配列格納後) 入室者の情報をみんなに通知
+router.post('/ws/enter/:seatNum', (req, res) => {
+    const seatNum = parseInt(req.params.seatNum);
+    
+    if (isNaN(seatNum) || seatNum < 0 || clients.size < seatNum) {
+        return res.status(404).json({ message: 'data not found' });
+    }
 
-    clients.set(we, getUserData(seatNum)[1]); // クライアント登録
+    const userData = getUserData(seatNum);
+    if (userData) {
+        clients.set(req.ws, userData[1]); // クライアント登録
 
-    clients.forEach(client => { // 全員に通知
-        // MEMO: client.Key() == ws
-        if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            res.status(200).json(getUserName(seatNum)); // 入室者のユーザ情報
-        }
-    })
-    console.log("入室したよ")
-});
-
-
-// 退室　退室した人の席を埋めるようみんなに通知
-app.delete('/ws/leave/:seatNum', (req, res) => {
-    const seatNum = parseInt(req.params.seatNum, 10);
-    // seatNumが範囲外の時、not found
-    if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
-
-    clients.delate(ws) // クライアント削除
-
-    clients.forEach(client => { // 全員に通知
-        // MEMO: client.Key() == ws
-        if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            for (let i = seatNum; i < clients.size; i++) { // 消去した配列より後ろがずれる
-                res.status(200).json(getAllUser()); // ユーザ情報配列(JSON)
+        clients.forEach(client => {
+            if (client.readyState === ws.OPEN) {
+                client.send(JSON.stringify(userData[1])); // 入室者のユーザ情報
             }
-        }
-    })
-    console.log("退室したよ")
+        });
+
+        console.log("入室したよ");
+        res.status(200).json(userData[1]); // クライアントにユーザ情報を返す
+    } else {
+        res.status(404).json({ message: 'user data not found' });
+    }
 });
 
-// ステータス変更  変更されたステータスをみんなに通知
-app.put('/ws/status/:seatNum', (req, res) => {
-    const seatNum = parseInt(req.params.seatNum, 10);
-    // seatNumが範囲外の時、not found
-    if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+// 退室 退室した人の席を埋めるようみんなに通知
+router.delete('/ws/leave/:seatNum', (req, res) => {
+    const seatNum = parseInt(req.params.seatNum);
 
-    clients.forEach(client => { // 全員に通知
-        if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            res.json({seatNum: seatNum, state: getState(seatNum)}); // ステータス
-        }
-    })
-    console.log("ステータス変更したよ")
-});
+    if (isNaN(seatNum) || seatNum < 0 || clients.size - 1 < seatNum) {
+        return res.status(404).json({ message: 'data not found' });
+    }
 
-
-// SE通知  SE識別番号を送る
-app.get('/ws/se/:seNum', (req, res) => {
-    const seNum = parseInt(req.params.seNum, 10);
-    clients.forEach(client => { // 全員に通知
-        if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            res.send(seNum); // SE識別番号を送る
-        }
-    })
-    console.log("ES鳴らすよ")
-});
-
-
-// 乾杯の通知　(seatNumはステータス押された側の席番号！！)
-app.get('/ws/cheers/:seatNum', (req, res) => {
-    const seatNum = parseInt(req.params.seatNum, 10);
-    // seatNumが範囲外の時、not found
-    if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
+    clients.delete(req.ws); // クライアント削除
 
     clients.forEach(client => {
-        // crientsに登録しているユーザIDと一致 & クライアントの接続が続いていたら
-        if (client.Value() === getUserData[seatNum][1] && client.Key().readyState === ws.OPEN) {
-            res.send(seatNum); // 乾杯を押されたのがわかる通知を送る
+        if (client.readyState === ws.OPEN) {
+            client.send(JSON.stringify(getAllUser())); // ユーザ情報配列(JSON)
         }
-    })
-    console.log("乾杯！")
+    });
+
+    console.log("退室したよ");
+    res.status(200).json({ message: 'user left' });
 });
 
-app.listen(3000, () => {
-    console.log('Server is listening on port 3000');
+// ステータス変更 変更されたステータスをみんなに通知
+router.put('/ws/status/:seatNum', (req, res) => {
+    const seatNum = parseInt(req.params.seatNum);
+
+    if (isNaN(seatNum) || seatNum < 0 || clients.size - 1 < seatNum) {
+        return res.status(404).json({ message: 'data not found' });
+    }
+
+    const status = getStatus(seatNum);
+    clients.forEach(client => {
+        if (client.readyState === ws.OPEN) {
+            res.json({seatNum: seatNum, state: getState(seatNum)}); // ステータス
+        }
+    });
+
+    console.log("ステータス変更したよ");
+    res.json(status);
 });
 
-// ルーターのエクスポート
+// SE通知 SE識別番号を送る
+router.get('/ws/se/:seNum', (req, res) => {
+    const seNum = req.params.seNum;
+    clients.forEach(client => {
+        if (client.readyState === ws.OPEN) {
+            client.send(seNum); // SE識別番号を送る
+        }
+    });
+
+    console.log("ES鳴らすよ");
+    res.send(seNum);
+});
+
+// 乾杯の通知 (seatNumはステータス押された側の席番号)
+router.get('/ws/cheers/:seatNum', (req, res) => {
+    const seatNum = parseInt(req.params.seatNum);
+
+    if (isNaN(seatNum) || seatNum < 0 || clients.size - 1 < seatNum) {
+        return res.status(404).json({ message: 'data not found' });
+    }
+
+    const userData = getUserData(seatNum);
+    if (userData) {
+        clients.forEach(client => {
+            if (client.readyState === ws.OPEN) {
+                client.send(JSON.stringify({ cheers: seatNum })); // 乾杯通知
+            }
+        });
+
+        console.log("乾杯！");
+        res.status(200).json({ cheers: seatNum });
+    } else {
+        res.status(404).json({ message: 'user data not found' });
+    }
+});
+
+
 module.exports = router;
