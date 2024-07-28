@@ -8,7 +8,7 @@ let groupId; // グループID
 router.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => { // ログイン後
     req.user.groupId = groupId; // グループID
     console.log('groupId:', groupId);
-    res.redirect(`http://localhost:5173/Enter`); // リダイレクト
+    res.redirect(`http://localhost:5173/`); // リダイレクト
 });
 
 router.get('/logout', (req, res, next) => { // ログアウト

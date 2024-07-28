@@ -1,6 +1,7 @@
 const passport = require('passport'); // ログイン用モジュール
 const DiscordStrategy = require('passport-discord').Strategy; // ログイン用モジュール
 require('dotenv').config(); // 環境変数の取得
+const { addUser } = require('../db');
 
 passport.use(new DiscordStrategy({
     clientID: process.env.CLIENT_ID, // クライアントID
@@ -10,7 +11,7 @@ passport.use(new DiscordStrategy({
 }, (accessToken, refreshToken, profile, done) => {
     profile.groupId = profile.groupId || null; // グループIDを設定
     console.log('profile:', profile); // ログイン後の情報を確認
-    // addUser(profile);  // ユーザー情報を保存
+    addUser(profile);  // ユーザー情報を保存
     return done(null, profile);
 }));
 
