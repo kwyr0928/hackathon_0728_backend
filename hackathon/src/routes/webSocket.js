@@ -11,11 +11,13 @@ const clients = new Map();// ユーザIDと接続を結び付ける
 
 // WebSocket接続
 app.ws('/ws', function (ws, req) {
-    console.log("")
+    ws.on('message', function (msg) {
+        console.log(`Message from ${userId}: ${msg}`);
+    });
 
     // 接続が切れたら
     ws.on('close', function () {
-
+        console.log(`${userId} disconnected`);
     })
 })
 
