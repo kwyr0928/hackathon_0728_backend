@@ -68,7 +68,7 @@ app.put('/ws/status/:seatNum', (req, res) => {
 
     clients.forEach(client => { // 全員に通知
         if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            res.json(getStatus(seatNum)); // ステータス
+            res.json({seatNum: seatNum, state: getState(seatNum)}); // ステータス
         }
     })
     console.log("ステータス変更したよ")
