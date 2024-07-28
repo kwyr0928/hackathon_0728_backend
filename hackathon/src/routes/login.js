@@ -5,11 +5,6 @@ const DiscordStrategy = require('passport-discord').Strategy; // ログイン用
 require('dotenv').config(); // 環境変数の取得
 let groupId; // グループID
 
-router.get('/:groupId', (req, res, next) => { // ログインURL
-    groupId = req.params.groupId; // 末尾からグループIDを取得
-    passport.authenticate('discord')(req, res, next); // ログイン処理
-});
-
 
 router.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => { // ログイン後
     req.user.groupId = groupId; // グループID
@@ -49,5 +44,12 @@ passport.deserializeUser((id, done) => {
 router.head('/callback', (req, res) => {
     res.sendStatus(200);
 });
+
+
+router.get('/:groupId', (req, res, next) => { // ログインURL
+    groupId = req.params.groupId; // 末尾からグループIDを取得
+    passport.authenticate('discord')(req, res, next); // ログイン処理
+});
+
 
 module.exports = router;
