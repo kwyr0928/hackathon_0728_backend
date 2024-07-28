@@ -24,8 +24,8 @@ app.ws('/ws', function (ws, req) {
 
 // WebSocketエンドポイント定義
 // 入室 (配列格納後)  入室者の情報をみんなに通知
-app.post('/ws/enter/:sertNum', (req, res) => {
-    // sertNumが範囲外の時、not found
+app.post('/ws/enter/:seatNum', (req, res) => {
+    // seatNumが範囲外の時、not found
     if (isNaN(seatNum) | seatNum < 0 || crients.size < seatNum) return res.status(404).json({ message: 'data not found' });
 
     clients.set(we, getUserData(req.params.seatNum)[1]); // クライアント登録
@@ -41,8 +41,8 @@ app.post('/ws/enter/:sertNum', (req, res) => {
 
 
 // 退室　退室した人の席を埋めるようみんなに通知
-app.delete('/ws/leave/:sertNum', (req, res) => {
-    // sertNumが範囲外の時、not found
+app.delete('/ws/leave/:seatNum', (req, res) => {
+    // seatNumが範囲外の時、not found
     if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
 
     clients.delate(ws) // クライアント削除
@@ -50,7 +50,7 @@ app.delete('/ws/leave/:sertNum', (req, res) => {
     clients.forEach(client => { // 全員に通知
         // MEMO: client.Key() == ws
         if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            for (let i = req.params.sertNum; i < clients.size; i++) { // 消去した配列より後ろがずれる
+            for (let i = req.params.seatNum; i < clients.size; i++) { // 消去した配列より後ろがずれる
                 res.status(200).json(getAllUser()); // ユーザ情報配列(JSON)
             }
         }
@@ -59,13 +59,13 @@ app.delete('/ws/leave/:sertNum', (req, res) => {
 });
 
 // ステータス変更  変更されたステータスをみんなに通知
-app.put('/ws/status/:sertNum', (req, res) => {
-    // sertNumが範囲外の時、not found
+app.put('/ws/status/:seatNum', (req, res) => {
+    // seatNumが範囲外の時、not found
     if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
 
     clients.forEach(client => { // 全員に通知
         if (client.Key().readyState === ws.OPEN) { // クライアントの接続が続いていたら
-            res.json(getStatus(req.params.sertNum)); // ステータス
+            res.json(getStatus(req.params.seatNum)); // ステータス
         }
     })
     console.log("ステータス変更したよ")
@@ -85,12 +85,12 @@ app.get('/ws/se/:seNum', (req, res) => {
 
 // 乾杯の通知　(seatNumはステータス押された側の席番号！！)
 app.get('/ws/cheers/:seatNum', (req, res) => {
-    // sertNumが範囲外の時、not found
+    // seatNumが範囲外の時、not found
     if (isNaN(seatNum) | seatNum < 0 || crients.size - 1 < seatNum) return res.status(404).json({ message: 'data not found' });
 
     clients.forEach(client => {
         // crientsに登録しているユーザIDと一致 & クライアントの接続が続いていたら
-        if (client.Value() === getUserData[req.params.sertNum][1] && client.Key().readyState === ws.OPEN) {
+        if (client.Value() === getUserData[req.params.seatNum][1] && client.Key().readyState === ws.OPEN) {
             res.send(seatNum); // 乾杯を押されたのがわかる通知を送る
         }
     })
