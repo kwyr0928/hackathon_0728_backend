@@ -18,7 +18,7 @@ app.use(bodyParser.json());
     ユーザ情報配列　JSON形式
     {groupID, userID, userAvatar, status} string, string, string, number
     seatNumはindex
-    ０．なし　１．酒　　２．ゲーム　３．作業　４．離席 ……　
+    ０．なし　１．酒　　２．ゲーム　３．パソコン　４．離席　５. 音楽　６. ご飯　７. チル ……　
 */
 let userData = [];
 
@@ -82,7 +82,7 @@ app.put('/status/:seatNum', (req, res) => { // 席番号を受け取る
     const data = userData[seatNum]
 
     data.status = req.body.newStatus || data.status;
-    userData, put(seatNum, data)
+    userData.put(seatNum, data)
 });
 
 // 特定のユーザアイコンを取得
